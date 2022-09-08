@@ -1,0 +1,1 @@
+# foundryvtt-roof-occlusion-vision-fade
