@@ -1,0 +1,35 @@
+{
+  "id": "roof-occlusion-vision-fade",
+  "title": "Roof Occlusion Vision And Fade",
+  "description": "A simple module to allow overhead tile occlusion to use both vision and fade",
+  "authors": [
+    {
+      "name": "Gundancer"
+    }
+  ],
+  "version": "1.0.0",
+  "minimumCoreVersion" : "10",
+  "compatibleCoreVersion": "10",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "10"
+  },
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ],
+  "styles": [
+    "styles/roof-occlusion-vision-fade.css"
+  ],
+  "scripts": [],
+  "esmodules": [
+    "roof-occlusion-vision-fade.mjs"
+  ],
+  "manifest": "https://github.com/Gundancer/foundryvtt-roof-occlusion-vision-fade/releases/latest/download/module.json",
+  "download": "https://github.com/Gundancer/foundryvtt-roof-occlusion-vision-fade/releases/download/v1.0.0/module.zip",
+  "readme": "https://raw.githubusercontent.com/Gundancer/foundryvtt-roof-occlusion-vision-fade/blob/main/README.md",
+  "url": "https://github.com/Gundancer/foundryvtt-roof-occlusion-vision-fade"
+}

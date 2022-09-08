@@ -1,0 +1,8 @@
+
+.roof-occlusion-vision-fade-also-fade {
+    display: none !important;
+}
+
+.roof-occlusion-vision-fade-also-fade.active {
+    display: flex !important;
+}

@@ -1,0 +1,16 @@
+{
+    "roof-vision-fade" : {
+        "tile-config" : {
+            "also-fade" : {
+                "name" : "Also Fade?",
+                "description" : "Hide entire tile when a token is underneath."
+            } 
+        },
+        "settings": {
+            "enable-button": {
+              "Name": "Enable Roof Vision and Fade",
+              "Hint": "Controls whether or not the tile can fade when occlusion mode is 'Vision'"
+            }
+        }
+    }
+}
