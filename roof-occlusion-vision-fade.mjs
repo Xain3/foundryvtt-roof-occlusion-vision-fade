@@ -8,5 +8,8 @@ Hooks.once('i18nInit', () => {
 });
 
 Hooks.on('ready', () => {
-    RoofVisionFade.addRoofVisionFadeModule();
+    // only enable if the user is the GM. players do not have access to update the tiles
+    if(game.user.isGM) {
+        RoofVisionFade.addRoofVisionFadeModule();
+    }
 });

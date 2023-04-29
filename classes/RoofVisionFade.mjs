@@ -37,14 +37,12 @@ export class RoofVisionFade {
 
                     tokens.forEach(token => {
                         if(this.isUnderTile(tile, token)) {
-                            //tile.document.occlusion.mode = 1;
-                            let test = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.FADE } };
-                            tile.document.update(test);
+                            let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.FADE } };
+                            tile.document.update(occlusion);
                         }
                         else {
-                            //tile.document.occlusion.mode = 4;
-                            let test = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
-                            tile.document.update(test);
+                            let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
+                            tile.document.update(occlusion);
                         }
                     });
                 }
