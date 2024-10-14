@@ -1,6 +1,6 @@
 import { Settings } from "./Settings.mjs";
 
-export const MODULENAME = "roof-occlusion-vision-fade";
+export const MODULENAME = "dev-roof-occlusion-vision-fade";
 
 const FLAGS = {
     ALSOFADE: 'alsoFade',
