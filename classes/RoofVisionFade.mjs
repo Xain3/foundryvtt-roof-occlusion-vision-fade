@@ -7,6 +7,9 @@ const FLAGS = {
     SHOWFADETOGGLE: 'showFadeToggle'
 }
 
+// Change this to true to enable debug mode
+const debugMode = false;
+
 // A class that contains the main functionality for the module
 export class RoofVisionFade {
     
@@ -31,26 +34,28 @@ export class RoofVisionFade {
             if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
                 return;
             }
-
+            
             // Add the UI
             this.addRoofVisionFadeUI(app, html, data);
-
+            
         });
-
+        
         // Update tile occlusion modes based on token ownership and position
         Hooks.on('refreshToken', (token) => {
             // if the ENABLE_BUTTON_SETTING setting is false, return early
             if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
                 return;
             }
-
+            
+            if (debugMode) {console.log(`Refreshing token ${token.id}`)};  // DEBUG - log the token id
+            
             // if the token is owned by the current user and is selected
             if (token.document.isOwner && this.isSelected(token, canvas.tokens.controlled)) {
                 // get all tiles on the canvas
                 let tiles = canvas.tiles.placeables;
                 tiles.forEach(tile => {
                     // get 'also fade' setting for tile
-                let alsoFade = tile.document.getFlag(MODULENAME, FLAGS.ALSOFADE);
+                    let alsoFade = tile.document.getFlag(MODULENAME, FLAGS.ALSOFADE);
 
                     // update the tile occlusion mode based on token position if 'also fade' is enabled
                     if (alsoFade) {
@@ -73,11 +78,11 @@ export class RoofVisionFade {
 
                     // ensure that the tile occlusion mode is set to 'Vision' if the token is not owned by the current user or is not selected
                     if (alsoFade) {
-                            let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
-                            tile.document.update(occlusion);
-                        }
-                    });
-                }
+                        let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
+                        tile.document.update(occlusion);
+                    }
+                });
+            }
         });
     }
 
@@ -118,6 +123,7 @@ export class RoofVisionFade {
      * @returns {boolean} - Returns true if the token is under the tile, otherwise false.
      */
     static isUnderTile(tile, token) {
+        if (debugMode) {console.log(`Checking if token ${token} is under tile`)}; // DEBUG - log the token and tile
         // top right corner of the tile
         let tileTopX = tile.document.x;
         let tileTopY = tile.document.y;
@@ -126,15 +132,20 @@ export class RoofVisionFade {
         let tileBottomY = tileTopY + tile.document.height;
         // Elevation of the tile
         let tileElevation = tile.document.elevation;
+        // DEBUG - log the tile coordinates and elevation
+        if (debugMode) {console.log(`Tile top x: ${tileTopX}, Tile top y: ${tileTopY}, Tile bottom x: ${tileBottomX}, Tile bottom y: ${tileBottomY}, Tile elevation: ${tileElevation}`)};
         // center of the token
         let tokenCenterX = token.document.x + (token.hitArea.width / 2);
         let tokenCenterY = token.document.y + (token.hitArea.height / 2);
         // elevation of the token
         let tokenElevation = token.document.elevation;
+        if (debugMode) {console.log(`Token center x: ${tokenCenterX}, Token center y: ${tokenCenterY}, Token elevation: ${tokenElevation}`)}; // DEBUG - log the token center and elevation
 
         // return true if the center of the token is within the bounds of the tile
         let withinBounds = tileTopX <= tokenCenterX && tokenCenterX <= tileBottomX &&
            tileTopY <= tokenCenterY && tokenCenterY <= tileBottomY;
+        if (debugMode) {console.log(`Token is within bounds: ${withinBounds}`)};  // DEBUG - log if the token is within the bounds of the tile
+
         if (withinBounds) {
             // return true if the token is under the tile
             let tokenUnderTile = tokenElevation < tileElevation;    
