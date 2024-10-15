@@ -21,21 +21,20 @@ export class RoofVisionFade {
 
         });
 
-        Hooks.on('refreshTile', (tile) => { 
+        Hooks.on('refreshToken', (token) => {
             // if the ENABLE_BUTTON_SETTING setting is false, return early
             if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
                 return;
             }
 
-            // also fade only if the tile is overhead
-            if(tile.document.overhead)
-            {
+            // if the token is owned by the current user and is selected
+            if (token.document.isOwner && this.isSelected(token, canvas.tokens.controlled)) {
+                let tiles = canvas.tiles.placeables;
+                tiles.forEach(tile => {
                 // get also fade setting for tile
                 let alsoFade = tile.document.getFlag(MODULENAME, FLAGS.ALSOFADE);
-                if(alsoFade) {
-                    let tokens = canvas.tokens.controlled;
 
-                    tokens.forEach(token => {
+                    if (alsoFade) {
                         if(this.isUnderTile(tile, token)) {
                             let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.FADE } };
                             tile.document.update(occlusion);
@@ -44,11 +43,30 @@ export class RoofVisionFade {
                             let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
                             tile.document.update(occlusion);
                         }
+                    }});
+            // if the token is not owned by the current user
+            } else {
+                let tiles = canvas.tiles.placeables;
+                tiles.forEach(tile => {
+                    // get also fade setting for tile
+                    let alsoFade = tile.document.getFlag(MODULENAME, FLAGS.ALSOFADE);
+
+                    if (alsoFade) {
+                            let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
+                            tile.document.update(occlusion);
+                        }
                     });
                 }
-            }
         });
+    }
 
+    static isSelected(token, selectedTokens) {
+        for (let selectedToken of selectedTokens) {
+            if (selectedToken.document.id === token.id) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static isUnderTile(tile, token) {
@@ -58,16 +76,22 @@ export class RoofVisionFade {
         // Bottom left corner of the tile
         let tileBottomX = tileTopX + tile.document.width;
         let tileBottomY = tileTopY + tile.document.height;
+        // Elevation of the tile
+        let tileElevation = tile.document.elevation;
         // center of the token
         let tokenCenterX = token.document.x + (token.hitArea.width / 2);
         let tokenCenterY = token.document.y + (token.hitArea.height / 2);
+        // elevation of the token
+        let tokenElevation = token.document.elevation;
 
         // return true if the center of the token is within the bounds of the tile
-        if(tileTopX <= tokenCenterX && tokenCenterX <= tileBottomX &&
-           tileTopY <= tokenCenterY && tokenCenterY <= tileBottomY) {
-            return true;
+        let withinBounds = tileTopX <= tokenCenterX && tokenCenterX <= tileBottomX &&
+           tileTopY <= tokenCenterY && tokenCenterY <= tileBottomY;
+        if (withinBounds) {
+            // return true if the token is under the tile
+            let tokenUnderTile = tokenElevation < tileElevation;    
+            return tokenUnderTile;
         }
-        return false;
     }
 
     static async addRoofVisionFadeUI(app, html, data) {
