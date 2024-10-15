@@ -1,6 +1,6 @@
 {
-  "id": "dev-roof-occlusion-vision-fade",
-  "title": "DEV - Roof Occlusion Vision And Fade",
+  "id": "roof-occlusion-vision-fade",
+  "title": "Roof Occlusion Vision And Fade",
   "description": "A simple module to allow overhead tile occlusion to use both vision and fade",
   "authors": [
     {
