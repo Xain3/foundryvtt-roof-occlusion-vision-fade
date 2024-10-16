@@ -1,4 +1,5 @@
 import { Settings } from "./Settings.mjs";
+import { OcclusionManager } from "./OcclusionManager.mjs";
 
 export const MODULENAME = "roof-occlusion-vision-fade";
 
@@ -8,7 +9,7 @@ const FLAGS = {
 }
 
 // Change this to true to enable debug mode
-const debugMode = false;
+const debugMode = true;
 
 // A class that contains the main functionality for the module
 export class RoofVisionFade {
@@ -26,6 +27,11 @@ export class RoofVisionFade {
      * @static
      * @method addRoofVisionFadeModule
      */
+    constructor() {
+        this.tilesWithAlsoFade = new Set();
+        this.selectedTokens = new Set();
+    }
+    
     static addRoofVisionFadeModule() {
         
         // Add the Roof Vision Fade module
@@ -40,117 +46,58 @@ export class RoofVisionFade {
             
         });
         
-        // Update tile occlusion modes based on token ownership and position
-        Hooks.on('refreshToken', (token) => {
+        // If the scene is changed, clear the selected tokens and tiles with also fade sets
+        Hooks.on('canvasTearDown', () => {
+            this.tilesWithAlsoFade.clear();
+            this.selectedTokens.clear();
+        });
+
+        // When a token is selected or deselected, update the selectedTokens set and evaluate occlusion
+        Hooks.on('controlToken', (token, controlled) => {
+            if (debugMode) {console.log(`Roof Vision Fade \| Token ${token.id} is controlled: ${controlled}`)}  // DEBUG - log the token id
+            // if the ENABLE_BUTTON_SETTING setting is false, return early
+            if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
+                return;
+            }
+            if (controlled) {
+                this.selectedTokens.add(token);
+            }
+            else {
+                this.selectedTokens.delete(token);
+            }
+            // Update the occlusion modes of tiles based on the token's position
+            OcclusionManager.evaluateOcclusion([...this.tilesWithAlsoFade], [...this.selectedTokens]);
+        });
+
+        // When a tile setting is updated, update the tilesWithAlsoFade set
+        Hooks.on('updateTile', (tile, data, options, userId) => {
+            if (debugMode) {console.log(`Roof Vision Fade \| Updating tile ${tile.id}`)}
+            // if the ENABLE_BUTTON_SETTING setting is false, return early
+            if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
+                return;
+            }
+            // if the tile has the 'also fade' flag set
+            if (tile.getFlag(MODULENAME, FLAGS.ALSOFADE)) {
+                this.tilesWithAlsoFade.add(tile);
+            }
+            else {
+                this.tilesWithAlsoFade.delete(tile);
+            }
+        });
+
+
+        // When a token is updated (e.g. is moved), update the occlusion modes of tiles based on the token's position
+        Hooks.on('updateToken', (token) => {
             // if the ENABLE_BUTTON_SETTING setting is false, return early
             if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
                 return;
             }
             
-            if (debugMode) {console.log(`Refreshing token ${token.id}`)};  // DEBUG - log the token id
+            if (debugMode) {console.log(`Roof Vision Fade \| Refreshing token ${token.id}`)};  // DEBUG - log the token id
             
-            // if the token is owned by the current user and is selected
-            if (token.document.isOwner && this.isSelected(token, canvas.tokens.controlled)) {
-                // get all tiles on the canvas
-                let tiles = canvas.tiles.placeables;
-                tiles.forEach(tile => {
-                    // get 'also fade' setting for tile
-                    let alsoFade = tile.document.getFlag(MODULENAME, FLAGS.ALSOFADE);
-
-                    // update the tile occlusion mode based on token position if 'also fade' is enabled
-                    if (alsoFade) {
-                        if(this.isUnderTile(tile, token)) {
-                            let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.FADE } };
-                            tile.document.update(occlusion);
-                        }
-                        else {
-                            let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
-                            tile.document.update(occlusion);
-                        }
-                    }});
-            
-            // if the token is not owned by the current user or is not selected
-            } else {
-                let tiles = canvas.tiles.placeables;
-                tiles.forEach(tile => {
-                    // get 'also fade' setting for tile
-                    let alsoFade = tile.document.getFlag(MODULENAME, FLAGS.ALSOFADE);
-
-                    // ensure that the tile occlusion mode is set to 'Vision' if the token is not owned by the current user or is not selected
-                    if (alsoFade) {
-                        let occlusion = { occlusion : { mode : CONST.TILE_OCCLUSION_MODES.VISION } };
-                        tile.document.update(occlusion);
-                    }
-                });
-            }
+            // Update the occlusion modes of tiles based on the token's position
+            OcclusionManager.evaluateOcclusion([...this.tilesWithAlsoFade], [...this.selectedTokens]);
         });
-    }
-
-    /**
-     * Checks if a given token is in the list of selected tokens.
-     *
-     * @param {Object} token - The token to check.
-     * @param {Array<Object>} selectedTokens - The list of selected tokens.
-     * @returns {boolean} - Returns true if the token is in the list of selected tokens, otherwise false.
-     */
-    static isSelected(token, selectedTokens) {
-        for (let selectedToken of selectedTokens) {
-            if (selectedToken.document.id === token.id) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Checks if a token is under a tile.
-     *
-     * @param {Object} tile - The tile object.
-     * @param {Object} tile.document - The document of the tile.
-     * @param {number} tile.document.x - The x-coordinate of the top-left corner of the tile.
-     * @param {number} tile.document.y - The y-coordinate of the top-left corner of the tile.
-     * @param {number} tile.document.width - The width of the tile.
-     * @param {number} tile.document.height - The height of the tile.
-     * @param {number} tile.document.elevation - The elevation of the tile.
-     * @param {Object} token - The token object.
-     * @param {Object} token.document - The document of the token.
-     * @param {number} token.document.x - The x-coordinate of the top-left corner of the token.
-     * @param {number} token.document.y - The y-coordinate of the top-left corner of the token.
-     * @param {number} token.document.elevation - The elevation of the token.
-     * @param {Object} token.hitArea - The hit area of the token.
-     * @param {number} token.hitArea.width - The width of the token's hit area.
-     * @param {number} token.hitArea.height - The height of the token's hit area.
-     * @returns {boolean} - Returns true if the token is under the tile, otherwise false.
-     */
-    static isUnderTile(tile, token) {
-        if (debugMode) {console.log(`Checking if token ${token} is under tile`)}; // DEBUG - log the token and tile
-        // top right corner of the tile
-        let tileTopX = tile.document.x;
-        let tileTopY = tile.document.y;
-        // Bottom left corner of the tile
-        let tileBottomX = tileTopX + tile.document.width;
-        let tileBottomY = tileTopY + tile.document.height;
-        // Elevation of the tile
-        let tileElevation = tile.document.elevation;
-        // DEBUG - log the tile coordinates and elevation
-        if (debugMode) {console.log(`Tile top x: ${tileTopX}, Tile top y: ${tileTopY}, Tile bottom x: ${tileBottomX}, Tile bottom y: ${tileBottomY}, Tile elevation: ${tileElevation}`)};
-        // center of the token
-        let tokenCenterX = token.document.x + (token.hitArea.width / 2);
-        let tokenCenterY = token.document.y + (token.hitArea.height / 2);
-        // elevation of the token
-        let tokenElevation = token.document.elevation;
-        if (debugMode) {console.log(`Token center x: ${tokenCenterX}, Token center y: ${tokenCenterY}, Token elevation: ${tokenElevation}`)}; // DEBUG - log the token center and elevation
-
-        // return true if the center of the token is within the bounds of the tile
-        let withinBounds = tileTopX <= tokenCenterX && tokenCenterX <= tileBottomX &&
-           tileTopY <= tokenCenterY && tokenCenterY <= tileBottomY;
-        if (debugMode) {console.log(`Token is within bounds: ${withinBounds}`)};  // DEBUG - log if the token is within the bounds of the tile
-
-        if (withinBounds) {
-            // return true if the token is under the tile
-            let tokenUnderTile = tokenElevation < tileElevation;    
-            return tokenUnderTile;
-        }
     }
 
     /**
