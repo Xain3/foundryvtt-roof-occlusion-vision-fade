@@ -1,12 +1,6 @@
 import { Settings } from "./Settings.mjs";
 import { OcclusionManager } from "./OcclusionManager.mjs";
-
-export const MODULENAME = "roof-occlusion-vision-fade";
-
-const FLAGS = {
-    ALSOFADE: 'alsoFade',
-    SHOWFADETOGGLE: 'showFadeToggle'
-}
+import { MODULENAME, FLAGS } from "./CONST. mjs";
 
 // Change this to true to enable debug mode
 const debugMode = true;
@@ -27,76 +21,69 @@ export class RoofVisionFade {
      * @static
      * @method addRoofVisionFadeModule
      */
-    constructor() {
-        this.tilesWithAlsoFade = new Set();
-        this.selectedTokens = new Set();
-    }
+    static tilesWithAlsoFade = new Set();
+    static selectedTokens = new Set();
+    static debugMode = Settings.getDebugMode();
     
     static addRoofVisionFadeModule() {
         
         // Add the Roof Vision Fade module
         Hooks.on('renderTileConfig', (app, html, data) => { 
             // if the ENABLE_BUTTON_SETTING setting is false, return early
-            if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
+            if (!Settings.getEnabled()) {
                 return;
             }
             
             // Add the UI
-            this.addRoofVisionFadeUI(app, html, data);
-            
+            this.addRoofVisionFadeUI(app, html, data);     
         });
         
         // If the scene is changed, clear the selected tokens and tiles with also fade sets
         Hooks.on('canvasTearDown', () => {
-            this.tilesWithAlsoFade.clear();
-            this.selectedTokens.clear();
+            RoofVisionFade.tilesWithAlsoFade.clear();
+            RoofVisionFade.selectedTokens.clear();
         });
 
         // When a token is selected or deselected, update the selectedTokens set and evaluate occlusion
         Hooks.on('controlToken', (token, controlled) => {
-            if (debugMode) {console.log(`Roof Vision Fade \| Token ${token.id} is controlled: ${controlled}`)}  // DEBUG - log the token id
+
             // if the ENABLE_BUTTON_SETTING setting is false, return early
-            if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
+            if (!Settings.getEnabled()) {
                 return;
             }
+            if (this.debugMode) {console.log(`Roof Vision Fade \| Token ${token.id} is controlled: ${controlled}`)}  // DEBUG - log the token id
             if (controlled) {
-                this.selectedTokens.add(token);
+                RoofVisionFade.selectedTokens.add(token);
             }
             else {
-                this.selectedTokens.delete(token);
+                RoofVisionFade.selectedTokens.delete(token);
             }
             // Update the occlusion modes of tiles based on the token's position
-            OcclusionManager.evaluateOcclusion([...this.tilesWithAlsoFade], [...this.selectedTokens]);
+            OcclusionManager.evaluateOcclusion([...RoofVisionFade.tilesWithAlsoFade], [...RoofVisionFade.selectedTokens]);
         });
 
+        Hooks.on('refreshTile', (tile, data, options, userId) => {
+            this.setTilesWithAlsoFade(tile);
+        });
+        
         // When a tile setting is updated, update the tilesWithAlsoFade set
         Hooks.on('updateTile', (tile, data, options, userId) => {
-            if (debugMode) {console.log(`Roof Vision Fade \| Updating tile ${tile.id}`)}
-            // if the ENABLE_BUTTON_SETTING setting is false, return early
-            if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
-                return;
-            }
-            // if the tile has the 'also fade' flag set
-            if (tile.getFlag(MODULENAME, FLAGS.ALSOFADE)) {
-                this.tilesWithAlsoFade.add(tile);
-            }
-            else {
-                this.tilesWithAlsoFade.delete(tile);
-            }
+            this.setTilesWithAlsoFade(tile);
         });
-
 
         // When a token is updated (e.g. is moved), update the occlusion modes of tiles based on the token's position
         Hooks.on('updateToken', (token) => {
             // if the ENABLE_BUTTON_SETTING setting is false, return early
-            if (!game.settings.get(MODULENAME, Settings.ENABLE_BUTTON_SETTING)) {
+            if (!Settings.getEnabled()) {
                 return;
             }
             
-            if (debugMode) {console.log(`Roof Vision Fade \| Refreshing token ${token.id}`)};  // DEBUG - log the token id
+            if (this.debugMode) {console.log(`Roof Vision Fade \| Refreshing token ${token.id}`)};  // DEBUG - log the token id
             
-            // Update the occlusion modes of tiles based on the token's position
-            OcclusionManager.evaluateOcclusion([...this.tilesWithAlsoFade], [...this.selectedTokens]);
+            if (this.tilesWithAlsoFade.size > 0 && this.selectedTokens.size > 0) {
+                // Update the occlusion modes of tiles based on the token's position
+                OcclusionManager.evaluateOcclusion([...RoofVisionFade.tilesWithAlsoFade], [...RoofVisionFade.selectedTokens]);
+            }
         });
     }
 
@@ -141,6 +128,21 @@ export class RoofVisionFade {
             this.changeOcclusionMode(event, app, html);
         });
 
+    }
+
+    static setTilesWithAlsoFade(tile) {
+        if (this.debugMode) {console.log(`Roof Vision Fade \| Updating tile ${tile.id}`)}
+        // if the ENABLE_BUTTON_SETTING setting is false, return early
+        if (!Settings.getEnabled()) {
+            return;
+        }
+        // if the tile has the 'also fade' flag set
+        if (tile.getFlag(MODULENAME, FLAGS.ALSOFADE)) {
+            RoofVisionFade.tilesWithAlsoFade.add(tile);
+        }
+        else {
+            RoofVisionFade.tilesWithAlsoFade.delete(tile);
+        }
     }
 
     /**

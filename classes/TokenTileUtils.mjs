@@ -1,3 +1,4 @@
+import { Settings } from "./Settings.mjs";
 export class TokenTileUtils {
     /**
      * Checks if a given token is in the list of selected tokens.
@@ -36,6 +37,7 @@ export class TokenTileUtils {
      * @returns {boolean} - Returns true if the token is under the tile, otherwise false.
      */
     static isUnderTile(tile, token) {
+        let debugMode = Settings.getDebugMode();
         if (debugMode) {console.log(`Roof Vision Fade \| Checking if token ${token} is under tile`)}; // DEBUG - log the token and tile
         // top right corner of the tile
         let tileTopX = tile.document.x;
