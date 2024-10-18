@@ -1,6 +1,6 @@
 import { Settings } from "./Settings.mjs";
 import { OcclusionManager } from "./OcclusionManager.mjs";
-import { MODULENAME, FLAGS } from "./CONST. mjs";
+import { MODULENAME, FLAGS } from "./CONST.mjs";
 
 // Change this to true to enable debug mode
 const debugMode = true;

@@ -1,4 +1,4 @@
-import { MODULENAME, ENABLE_BUTTON_SETTING, DEBUG_MODE_SETTING } from './module.js';
+import { MODULENAME, ENABLE_BUTTON_SETTING, DEBUG_MODE_SETTING } from './CONST.mjs';
 
 // A class used to register the module settings
 export class Settings {
